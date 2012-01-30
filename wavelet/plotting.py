@@ -6,30 +6,31 @@ Created on Mon Oct 31 22:11:07 2011
 
 """
 
-import idlsave
 import numpy as np
 import matplotlib as mpl
 import matplotlib.pyplot as plt
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 import wavelet
-import old_wavelet
 
-# IDL Data
-data = idlsave.read('results.save')
-IDL = data.smooth_area_1
+#Pore data
+pore = np.load("pore_test.npy")
+
 # Artifical Data
 x = np.double(np.arange(0,150))
 P = 125. # Period
-y = np.double(10*np.sin((2.*np.pi*x)/P))
-A= IDL 
-dt = 0.25
+A = np.double(10*np.sin((2.*np.pi*x)/P))
+#Pick your data
+data = pore
+
+#Set dt (0.25 for pore data, 1 for test data)
+dt = 1.0 #0.25
 scaling="linear" #or "log"
-Ns=len(A)
+Ns=len(data)
 Nlo=0 
 Nhi=Ns
 
 # Current Wavelet
-cw=wavelet.Morlet(A,dt,dj=1./100.,scaling=scaling,padding=True)
+cw=wavelet.Morlet(data,dt,dj=1./100.,scaling=scaling,padding=True)
 scales=cw.getscales()     
 cwt=cw.getdata()
 pwr=cw.getpower()
@@ -40,7 +41,7 @@ x=np.arange(Nlo,Nhi,1.0)
 
 # sets x and y limits
 extent = [Nlo,Nhi,np.min(y),np.max(y)]
-plt.ion()
+
 fig = plt.figure()
 axwavelet = plt.subplot(111)
 im = mpl.image.NonUniformImage(axwavelet,extent=extent, interpolation = "nearest",origin="lower")
@@ -61,7 +62,7 @@ axbar  =  divider.append_axes("bottom", size=0.1, pad=0.6)
 plt.colorbar(im, cax=axbar, orientation='horizontal')
 
 # Plots orignal data series
-axdata.plot(x,A,'b-')
+axdata.plot(x,data,'b-')
 axdata.set_xlim(extent[0:2])
 axdata.set_title('What Data')
 axdata.set_ylabel('Unit')
@@ -74,4 +75,4 @@ axpower.xaxis.set_major_locator(mpl.ticker.LinearLocator(3))
 axpower.xaxis.set_major_formatter(mpl.ticker.FormatStrFormatter("%1.e"))
 axpower.set_ylim(extent[2:4])
 
-#plt.show()
+plt.show()
