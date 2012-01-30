@@ -46,8 +46,6 @@ Modifications Planned
 """
 
 import numpy as np
-import scipy as sp
-import matplotlib.pyplot as plt
 
 class Cwt:
     """
@@ -80,44 +78,43 @@ class Cwt:
         #Set default scale
         smallestscale = smallestscale or 2*dt
         self.order = order
+        self.dt = dt
         #make sure data is ndarray
         data = np.array(data)
         if len(data.shape) > 1:
             raise ValueError("Data should be a 1D time series")
-        ndata = data.shape[0]
+        self.ndata = data.shape[0]
         #Pad data up to nearset 2^N
         if padding:
-            nearestN = 2**int(np.ceil(np.log(ndata)/np.log(2)))
-            if nearestN == ndata:
+            nearestN = 2**int(np.ceil(np.log(self.ndata)/np.log(2)))
+            if nearestN == self.ndata:
                 pass
             else:              
                 newdata = np.zeros([nearestN])
-                newdata[:ndata] = data
+                newdata[:self.ndata] = data
                 data = newdata
                 #Just to make sure
                 del newdata
         else:
-            nearestN = ndata
+            nearestN = self.ndata
             
-        self._setscales(ndata,dt,smallestscale,dj,notes,scaling)
-        self.cwt = np.zeros([self.nscale,ndata], dtype=np.complex64)
-        omega = np.array(range(0,nearestN/2)+range(-nearestN/2,0))*(2.0*np.pi/(nearestN*dt))
-        #datahat = np.fft.fft(data)
-        datahat = sp.fft(data)								
+        self._setscales(smallestscale,dj,notes,scaling)
+        self.cwt = np.zeros([self.nscale,self.ndata], dtype=np.complex64)
+        omega = np.array(range(0,nearestN/2)+range(-nearestN/2,0))*(2.0*np.pi/(nearestN*self.dt))
+        datahat = np.fft.fft(data)	        
         
         # loop over scales and compute wvelet coeffiecients at each scale
         # using the fft to do the convolution
         for scaleindex,self.currentscale in enumerate(self.scales):
             s_omega = omega*self.currentscale
             psihat = self.wf(s_omega)
-            psihat = psihat *  np.sqrt((2.0*np.pi*self.currentscale)/dt)
-            convhat = psihat * datahat * np.exp(1j * omega * nearestN * dt)
-            #W    = np.fft.ifft(convhat)
-            W    = sp.ifft(convhat)
-            self.cwt[scaleindex,:ndata] = W[:ndata]
+            psihat = psihat *  np.sqrt((2.0*np.pi*self.currentscale)/self.dt)
+            convhat = psihat * datahat * np.exp(1j * omega * nearestN * self.dt)
+            W    = np.fft.ifft(convhat)
+            self.cwt[scaleindex,:self.ndata] = W[:self.ndata]
         return
     
-    def _setscales(self,ndata,dt,smallestscale,dj,notes,scaling):
+    def _setscales(self,smallestscale,dj,notes,scaling):
         """
         if notes non-zero, returns a log scale based on notes per ocave
         else a linear scale
@@ -139,7 +136,7 @@ class Cwt:
             raise NotImplementedError("Go fuck yourself")
             
         elif scaling=="linear":
-            J = int(np.log2((ndata * dt )/ smallestscale) / dj) + 1
+            J = int(np.log2((self.ndata * self.dt )/ smallestscale) / dj) + 1
             self.nscale = int(J)
             self.scales = np.zeros([J])
             for j in xrange(int(J)):
@@ -186,8 +183,9 @@ class Cwt:
         """
         return number of scales
         """
-        self.coi = self.fourierwl * dt * np.array(range((nearestN+1)/2)+range(-nearestN/2,0))
-        return self.coi
+        coi_aa = np.array(range(0,(self.ndata+1)/2)+range(self.ndata/2,0,-1))*self.dt
+        coi = self.coi * coi_aa 
+        return coi
 
 # wavelet classes    
 class Morlet(Cwt):
@@ -196,6 +194,7 @@ class Morlet(Cwt):
     """
     _omega0=6.0
     fourierwl=(4.* np.pi)/(_omega0+ np.sqrt(2.0+_omega0**2.))
+    coi = fourierwl/np.sqrt(2)
     
     def wf(self, s_omega):
         H = np.ones(len(s_omega))
