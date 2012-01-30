@@ -1,0 +1,8 @@
+Initial version of a wavelet package:
+target features:
+- Multiple wavelet families
+- Cone of Infuluence
+- Significance contouring
+- Cross Wavelet
+
+Plotting.py contains an example plotting routine, to be modfied and well documented as an example.
