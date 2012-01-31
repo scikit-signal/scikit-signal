@@ -49,6 +49,7 @@ Modifications Implemented
     - Made MexicanHat a subclass of DOG m=2
     - Dropped Log scaling in favour of doing it in the plotting routine
         - Removed notes input as only used for log scaling
+    - Moved from methods to attributes for data output
 
 Modifications Planned
 ---------------------
@@ -68,21 +69,44 @@ class Cwt:
     
     To be used via subclasses with implemented wf(self,s_omega)
     """
-    fourierwl=1.00
 
     def __init__(self, data, dt, smallestscale = None, dj = 0.125,
                  order=2, padding=True):
         """
         Continuous wavelet transform of data
-
-        data:    data in array to transform
-        dt:      data timestep
-        largestscale: largest scale as inverse fraction of length
-                 of data array
-                 scale = len(data)/largestscale
-                 smallest scale should be >= 2 for meaningful data
-        order:   Order of wavelet basis function for some families
-        padding: Set to false to prevent padding up to nearest N = 2^x
+        
+        Arguments and Keyword Arguments
+        -------------------------------
+        =============   =================== ===================================
+        Argument        Type                Description
+        =============   =================== ===================================
+        data            ndarray (np.double) data in array to transform
+        dt              float               data timestep
+        smallestscale   float               Smallest scale to be used to 
+                                            calculate CWT
+                                                - default 2*dt
+        dj              float               Scale [period] resolution
+                                                - default 1/8
+        order           int                 Order of wavelet basis function for
+                                            some families
+                                                - default m = 2
+        padding         Boolean             Set to false to prevent padding up
+                                            to nearest N = 2^x
+        =============   =================== ===================================
+        
+        Methods and Attributes
+        ----------------------
+        ================    ======================  ===========================
+        Attribute           Type                    Description
+        ================    ======================  ===========================
+        wavelet.cwt         ndarray (np.complex64)  Wavelet data / coefficients
+        wavelet.power       ndarray (np.float)      Real power (cwt . cwt*)
+        wavelet.scales      ndarray (np.float)      Array of scales
+        wavelet.periods     ndarray (np.float)      Period of each scale
+                                                        - scale * fourierwl
+        wavelet.getcoi()    ndarray (np.float)      Array specifiying a line
+                                                    for the COI
+        ================    ======================  ===========================
         """
         #Set default scale
         smallestscale = smallestscale or 2*dt
@@ -95,7 +119,7 @@ class Cwt:
         self.ndata = data.shape[0]
         #Pad data up to nearset 2^N
         if padding:
-            nearestN = 2**int(np.ceil(np.log(self.ndata)/np.log(2)))
+            nearestN = 2**int(np.ceil(np.log2(self.ndata)))
             if nearestN == self.ndata:
                 pass
             else:              
@@ -121,6 +145,11 @@ class Cwt:
             convhat = psihat * datahat * np.exp(1j * omega * nearestN * self.dt)
             W    = np.fft.ifft(convhat)
             self.cwt[scaleindex, :self.ndata] = W[:self.ndata]
+            
+            
+        #Make attributes for getting data as opposed to simple methods
+        self.power = (self.cwt* np.conjugate(self.cwt)).real
+        self.periods = self.scales * self.fourierwl
         return
     
     def _setscales(self, smallestscale, dj):
@@ -132,36 +161,6 @@ class Cwt:
         self.scales = np.zeros([J])
         for j in xrange(int(J)):
             self.scales[j] = smallestscale * 2.**(j*dj)
-        
-    def getdata(self):
-        """
-        returns wavelet coefficient array
-        """
-        return self.cwt
-        
-    def getcoefficients(self):
-        """
-        Return raw wavelet coefficients
-        """        
-        return self.cwt
-        
-    def getpower(self):
-        """
-        returns square of wavelet coefficient array
-        """
-        return (self.cwt* np.conjugate(self.cwt)).real
-        
-    def getscales(self):
-        """
-        returns array containing scales used in transform
-        """
-        return self.scales
-        
-    def getperiods(self):
-        """
-        returns array containing scales used in transform
-        """
-        return self.scales * self.fourierwl
         
     def getcoi(self):
         """
@@ -176,9 +175,14 @@ class Morlet(Cwt):
     """
     Morlet wavelet
     """
-    _omega0=6.0
-    fourierwl=(4.* np.pi)/(_omega0+ np.sqrt(2.0+_omega0**2.))
-    coi = fourierwl/np.sqrt(2)
+    def __init__(self, data, dt, smallestscale = None, dj = 0.125,
+                 order=2, padding=True):
+                
+        self._omega0 = 6.0
+        self.fourierwl = (4.* np.pi)/(self._omega0+ np.sqrt(2.0+self._omega0**2.))
+        self.coi = self.fourierwl / np.sqrt(2)
+        
+        Cwt.__init__(self, data, dt, smallestscale, dj, order, padding)
     
     def wf(self, s_omega):
         H = np.ones(len(s_omega))
@@ -192,8 +196,15 @@ class MorletReal(Cwt):
     """
     Real Morlet wavelet
     """
-    _omega0=5.0
-    fourierwl=4* np.pi/(_omega0+ np.sqrt(2.0+_omega0**2))
+    def __init__(self, data, dt, smallestscale = None, dj = 0.125,
+                 order=2, padding=True):
+        
+        self._omega0=5.0
+        self.fourierwl = 4 * np.pi / (self._omega0+ np.sqrt(2.0+self._omega0**2))
+        self.coi = self.fourierwl / np.sqrt(2)
+        
+        Cwt.__init__(self, data, dt, smallestscale, dj, order, padding)
+        
     def wf(self, s_omega):
         H= np.ones(len(s_omega))
         for i in range(len(s_omega)):
@@ -210,8 +221,15 @@ class Paul(Cwt):
     """
     Paul order m wavelet
     """
+    def __init__(self, data, dt, smallestscale = None, dj = 0.125,
+                 order=2, padding=True):
+                
+        self.fourierwl = 4.* np.pi/(2.*order+1.)
+        self.coi = self.fourierwl * np.sqrt(2)
+        
+        Cwt.__init__(self, data, dt, smallestscale, dj, order, padding)
+        
     def wf(self, s_omega):
-        Cwt.fourierwl = 4.* np.pi/(2.*self.order+1.)
         m = self.order
         n = len(s_omega)
         normfactor = float(m)
@@ -228,12 +246,19 @@ class DOG(Cwt):
     Derivative Gaussian wavelet of order m
     but reconstruction seems to work best with +!
     """
+    def __init__(self, data, dt, smallestscale = None, dj = 0.125,
+                 order=2, padding=True):
+        
+        self.fourierwl=2* np.pi/ np.sqrt(order + 0.5)
+        self.coi = self.fourierwl / np.sqrt(2)
+        Cwt.__init__(self, data, dt, smallestscale, dj, order, padding)
+        
+        
     def wf(self, s_omega):
         try:
             from scipy.special import gamma
         except ImportError:
-            raise ImportError("IMPORT ERROR: Requires scipy gamma function")
-        Cwt.fourierwl=2* np.pi/ np.sqrt(self.order + 0.5)
+            raise ImportError("Requires scipy gamma function [scipy.special.gamma]")
         m = self.order
         dog = 1.0j**m*s_omega**m* np.exp(-s_omega**2./2.)/ np.sqrt(gamma(self.order + 0.5))
         return dog
@@ -245,8 +270,8 @@ class MexicanHat(DOG):
     Retained for calling only.
     """
     def __init__(self, data, dt, smallestscale=None, dj=0.125, padding=True):
-        self.order = 2
-        DOG.__init__(self, data, dt, smallestscale, dj, padding)
+        order = 2
+        DOG.__init__(self,data, dt, smallestscale, dj, order, padding)
     
     
 class Haar(Cwt):
@@ -257,8 +282,13 @@ class Haar(Cwt):
     #    note: s_omega/4 matches Lecroix scale defn.
     #          s_omega/2 matches orthogonal Haar
     # 2/8/05 constants adjusted to match artem eim
-
-    fourierwl = 1.0#1.83129  #2.0
+    def __init__(self, data, dt, smallestscale = None, dj = 0.125,
+                 order=2, padding=True):
+               
+        self.fourierwl = 1.0#1.83129  #2.0
+        
+        Cwt.__init__(self, data, dt, smallestscale, dj, order, padding)
+        
     def wf(self, s_omega):
         haar = np.zeros(len(s_omega),dtype=np.complex64)
         om = s_omega[:]/self.currentscale
@@ -275,8 +305,12 @@ class HaarW(Cwt):
     #    note: s_omega/4 matches Lecroix scale defn.
     #          s_omega/2 matches orthogonal Haar
     # normalised to unit power
-
-    fourierwl = 1.83129 * 1.2  #2.0
+    def __init__(self, data, dt, smallestscale = None, dj = 0.125,
+                 order=2, padding=True):
+        
+        self.fourierwl = 1.83129 * 1.2  #2.0
+        Cwt.__init__(self, data, dt, smallestscale, dj, order, padding)
+        
     def wf(self, s_omega):
         haar = np.zeros(len(s_omega),dtype=np.complex64)
         om = s_omega[:]#/self.currentscale

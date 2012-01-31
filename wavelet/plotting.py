@@ -16,37 +16,55 @@ import wavelet
 pore = np.load("pore_test.npy")
 
 # Artifical Data
+'''
+Here we create an artfical sin wave 
+'''
 x = np.double(np.arange(0,150))
-P = 125. # Period
+P = 150. # Period
 A = np.double(10*np.sin((2.*np.pi*x)/P))
+
 #Pick your data
 data = pore
 
-#Set dt (0.25 for pore data, 1 for test data)
-dt = 1.0 #0.25
-scaling="linear" #or "log"
-Ns=len(data)
+#Set dt (0.25 for pore data)
+dt = 0.25
 Nlo=0 
-Nhi=Ns
+Nhi=len(data)
+
 
 # Current Wavelet
-cw=wavelet.Morlet(data,dt,dj=1./100.,scaling=scaling,padding=True)
-scales=cw.getscales()     
-cwt=cw.getdata()
-pwr=cw.getpower()
-scalespec=np.sum(pwr,axis=1)/Ns
-y=cw.getperiods()
-print np.shape(y)
-x=np.arange(Nlo,Nhi,1.0) 
+cw=wavelet.Morlet(data,dt,dj=1./100.,padding=True)
+scales=cw.scales   
+cwt=cw.cwt
+pwr=cw.power
+scalespec=np.sum(pwr,axis=1)/Nhi
+y=cw.periods
+coi=cw.getcoi()
+x=np.arange(Nlo,Nhi,1.0)/60.
+
+
+cdict = {
+'blue' : ((0., 1, 1), (0.2, 1, 1), (0.2, 1, 1), (0.34, 1, 1), (0.65, 0, 0), (1, 0, 0)),
+'green': ((0., 1, 1), (0.1, 0.0, 0.0), (0.2, 0, 0), (0.375, 1, 1), (0.64, 1, 1), (0.91, 0, 0), (1, 0, 0)),
+'red'  : ((0., 1, 1), (0.1, 0.0, 0.0), (0.2, 0, 0), (0.66, 1, 1), (0.89, 1, 1), (1, 0.5, 0.5))
+        }
+
+my_cmap = mpl.colors.LinearSegmentedColormap('my_colormap', cdict, 2048)
+
 
 # sets x and y limits
-extent = [Nlo,Nhi,np.min(y),np.max(y)]
-
+extent = [Nlo/60.,Nhi/60.,np.min(y),30]#np.max(y)
+plt.ion()
 fig = plt.figure()
 axwavelet = plt.subplot(111)
-im = mpl.image.NonUniformImage(axwavelet,extent=extent, interpolation = "nearest",origin="lower")
-im.set_data(x,y,pwr)
-axwavelet.images.append(im)
+im = plt.contourf(x,y,pwr,100,linewidths=0, cmap=my_cmap,extent=extent) 
+#im = mpl.image.NonUniformImage(axwavelet,extent=extent, interpolation = "nearest",origin="lower",cmap=my_cmap)
+#im.set_data(x,y,pwr)
+#axwavelet.images.append(im)
+#axwavelet.plot(coi,'k')
+
+polys = axwavelet.fill_between(x,coi,np.max(y),visible=False)
+axwavelet.add_patch(mpl.patches.PathPatch(polys.get_paths()[0],hatch='x',facecolor=(0,0,0,0)))
 axwavelet.axis(extent)
 axwavelet.set_title('Wavelet Power Spectrum')
 axwavelet.set_xlabel('Time [mins]')
@@ -75,4 +93,4 @@ axpower.xaxis.set_major_locator(mpl.ticker.LinearLocator(3))
 axpower.xaxis.set_major_formatter(mpl.ticker.FormatStrFormatter("%1.e"))
 axpower.set_ylim(extent[2:4])
 
-plt.show()
+#plt.show()
