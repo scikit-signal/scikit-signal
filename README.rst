@@ -1,5 +1,11 @@
 .. -*- mode: rst -*-
 
+Note
+====
+
+New version of cwt added, from scipy-cwt. Moved into here to keep large amounts of code out of it.
+
+
 About
 =====
 
