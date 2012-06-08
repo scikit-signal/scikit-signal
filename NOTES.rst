@@ -9,8 +9,8 @@ Personally my target for this cwt is to get it into SciPy asap, currently I am w
 
 The two versions of this code need to be compressed into one, Sean's CWT is better documented etc. than ours, so I think we will base on that.
 
-I am not convinced by the layout of the code, mainly the calling a function in the module(cwt, icwt etc.)
- and returning an instance of a class (Wavelet) I think it would be better to have a class which is subclassed for different functions 
+I am not convinced by the layout of the code, mainly the calling a function in the module(cwt, icwt etc.) 
+and returning an instance of a class (Wavelet) I think it would be better to have a class which is subclassed for different functions 
 but after all what do I know about OOP?!
 
 which brings us to a TODO list:
