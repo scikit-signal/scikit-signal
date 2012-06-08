@@ -136,7 +136,7 @@ class Cwt:
         omega = np.array(range(0, nearestN/2) + range(-nearestN/2, 0))*(2.0*np.pi/(nearestN*self.dt))
         datahat = np.fft.fft(data)	        
         
-        # loop over scales and compute wvelet coeffiecients at each scale
+        # loop over scales and compute wavelet coeffiecients at each scale
         # using the fft to do the convolution
         for scaleindex, self.currentscale in enumerate(self.scales):
             s_omega = omega*self.currentscale
@@ -174,7 +174,8 @@ class Cwt:
 class Morlet(Cwt):
     """
     Morlet wavelet
-    """
+    """ + Cwt.__init__.__doc__
+
     def __init__(self, data, dt, smallestscale = None, dj = 0.125,
                  order=2, padding=True):
                 

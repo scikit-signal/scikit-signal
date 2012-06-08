@@ -44,9 +44,9 @@ x=np.arange(Nlo,Nhi,1.0)/60.
 
 
 cdict = {
-'blue' : ((0., 1, 1), (0.2, 1, 1), (0.2, 1, 1), (0.34, 1, 1), (0.65, 0, 0), (1, 0, 0)),
-'green': ((0., 1, 1), (0.1, 0.0, 0.0), (0.2, 0, 0), (0.375, 1, 1), (0.64, 1, 1), (0.91, 0, 0), (1, 0, 0)),
-'red'  : ((0., 1, 1), (0.1, 0.0, 0.0), (0.2, 0, 0), (0.66, 1, 1), (0.89, 1, 1), (1, 0.5, 0.5))
+'blue' : ((0., 1, 1), (0.1, 1.0, 1.0), (0.2, 1, 1), (0.34, 1.0, 1.0), (0.65, 0.0, 0.0), (1.0, 0.0, 0.0)),
+'green': ((0., 1, 1), (0.1, 0.0, 0.0), (0.2, 0, 0), (0.37, 1.0, 1.0), (0.64, 1.0, 1.0), (1.0, 0.0, 0.0)),
+'red'  : ((0., 1, 1), (0.1, 0.0, 0.0), (0.2, 0, 0), (0.66, 1.0, 1.0), (0.89, 1.0, 1.0), (1.0, 0.5, 0.5))
         }
 
 my_cmap = mpl.colors.LinearSegmentedColormap('my_colormap', cdict, 2048)
@@ -54,10 +54,9 @@ my_cmap = mpl.colors.LinearSegmentedColormap('my_colormap', cdict, 2048)
 
 # sets x and y limits
 extent = [Nlo/60.,Nhi/60.,np.min(y),30]#np.max(y)
-plt.ion()
 fig = plt.figure()
 axwavelet = plt.subplot(111)
-im = plt.contourf(x,y,pwr,100,linewidths=0, cmap=my_cmap,extent=extent) 
+im = plt.contourf(x,y,pwr,100, cmap=my_cmap,extent=extent) 
 #im = mpl.image.NonUniformImage(axwavelet,extent=extent, interpolation = "nearest",origin="lower",cmap=my_cmap)
 #im.set_data(x,y,pwr)
 #axwavelet.images.append(im)
@@ -69,7 +68,7 @@ axwavelet.axis(extent)
 axwavelet.set_title('Wavelet Power Spectrum')
 axwavelet.set_xlabel('Time [mins]')
 axwavelet.set_ylabel('Period [mins]')
-
+axwavelet.axis()
 # create new axes on the right and on the top of the current axes.
 divider = make_axes_locatable(axwavelet)
 axdata  = divider.append_axes("top", size=1.0, pad=0.6, sharex=axwavelet)
@@ -80,17 +79,17 @@ axbar  =  divider.append_axes("bottom", size=0.1, pad=0.6)
 plt.colorbar(im, cax=axbar, orientation='horizontal')
 
 # Plots orignal data series
-axdata.plot(x,data,'b-')
+axdata.plot(x,data,'k-')
 axdata.set_xlim(extent[0:2])
 axdata.set_title('What Data')
 axdata.set_ylabel('Unit')
 
 # Plots the total power
-axpower.plot(scalespec,y,'b-')
+axpower.plot(scalespec,y,'k-')
 axpower.set_title('Global Wavelet')
 axpower.set_xlabel('Power')
 axpower.xaxis.set_major_locator(mpl.ticker.LinearLocator(3))
 axpower.xaxis.set_major_formatter(mpl.ticker.FormatStrFormatter("%1.e"))
 axpower.set_ylim(extent[2:4])
 
-#plt.show()
+plt.show()
