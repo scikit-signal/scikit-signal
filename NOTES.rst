@@ -21,6 +21,8 @@ which brings us to a TODO list:
 4) Write a tutorial documentation
 5) Party.
 
+=====================================================================
+
 Notes of the Nab (The one and only):
 
 So, called cwt like this:
@@ -36,3 +38,5 @@ wavelet.scalogram()
 First thing, want to make it this way: sp.cwt(.......) in the future
 Second, the scale number should be created automatically. Right now, the scale number seems to be generated manually, which is fine for a discrete wavelet and we can make this class do both types of waveelet.
 Thirdly, I'd like to remove the second line that defines the mother_wavelet. It would be nice to be able to call a name of the mother and have it be generated when cwt is called instead.
+
+=====================================================================
